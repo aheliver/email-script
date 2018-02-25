@@ -1,12 +1,9 @@
-import smtplib, os
-import email.encoders, email.mime.base
+import smtplib
 import ConfigParser
-
+from email.mime.application import MIMEApplication
+from os.path import basename
+from email.mime.multipart import MIMEMultipart
 from email.MIMEText import MIMEText
-from email.mime.base import MIMEBase
-from email.encoders import encode_base64
-
-
 
 
 def main():	
@@ -32,9 +29,9 @@ def read_config():
 	config.body_path = config_parser.get('DEFAULT', 'body_path')
 
 	config.attachment = Config()
-	config.attachment.path = config_parser.get('attachment', 'attachment_path')	
-	config.attachment.file_name = config_parser.get('attachment', 'attachment_file_name')
-	config.attachment.mime_type = config_parser.get('attachment', 'attachment_mime_type')
+	config.attachment.files = config_parser.get('attachment', 'attachment_files').split('\n')
+	# config.attachment.file_name = config_parser.get('attachment', 'attachment_file_name')
+	# config.attachment.mime_type = config_parser.get('attachment', 'attachment_mime_type')
 
 	config.email_list = config_parser.get('email_list', 'array').split('\n')
 
@@ -46,16 +43,28 @@ def send_email(config):
 	session.starttls()
 	session.login(config.user, config.password)
 
-	attachment = create_attachment(config)
-	body = MIMEText(read_file(config.body_path))
+	# attachment = create_attachment(config)
+
+
 
 	for recipient in config.email_list:
-		msg = email.MIMEMultipart.MIMEMultipart('alternative')
+		msg = MIMEMultipart()
+
 		msg['Subject'] = config.email_subject
 		msg['From'] = config.user		
 		msg['To'] = recipient
-		msg.attach(body)		
-		msg.attach(attachment)
+
+		body = MIMEText(read_file(config.body_path))
+		msg.attach(body)	
+
+		files = config.attachment.files	
+
+		for f in files or []:
+			with open(f, "rb") as file:
+				part = MIMEApplication(file.read(), Name=basename(f))
+        		part['Content-Disposition'] = 'attachment; filename="%s"' % basename(f)
+        		msg.attach(part)
+        	
 
 		print 'sending message to: ' + recipient
 		session.sendmail(config.user, recipient, msg.as_string())
@@ -63,17 +72,11 @@ def send_email(config):
 
 	session.quit()
 
-def create_attachment(config):	
-	fileMsg = MIMEBase('mixed', config.attachment.mime_type)
-	fileMsg.set_payload(read_file(config.attachment.path))
-	encode_base64(fileMsg)
-	fileMsg.add_header('Content-Disposition','attachment;filename=' + config.attachment.file_name)	
-	return fileMsg
-
 def read_file(file_name):
-	fp = open(file_name, 'rb')
-	retFile = fp.read()
-	fp.close
+	print 'read file: ' + file_name
+	with open(file_name, 'rb') as fp:
+		retFile = fp.read()
+
 	return retFile
 
 #run script

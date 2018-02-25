@@ -1,15 +1,13 @@
 [DEFAULT]
-user = your_email@gmail.com
-password = your password should be here
+user = your email
+password = pswd
 subject = test subject
-body_path = D:\test.txt
+body_path = body.txt
 
 [attachment]
-attachment_path = D:\Dropbox\\test.docx
-attachment_file_name = new name.docx
-attachment_mime_type = vnd.ms-word
+attachment_files = path 1
+				 	path 2
 
 [email_list]
-array = some_email_1@gmail.com
-		some_email_2@gmail.com
-		some_email_3@gmail.com
+array = mail1
+		mail2
